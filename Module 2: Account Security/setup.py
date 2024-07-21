@@ -109,10 +109,68 @@ def create_lambda_function(prefix):
 		print(e)
 		exit(0)
 
+	return role_arn
+
+def generate_iam_policy(prefix, output):
+	bucket_name = f"{prefix}-development"
+
+	policy = {
+	    "Version": "2012-10-17",
+	    "Statement": [
+	        {
+	            "Sid": "ReadWriteAccess",
+	            "Effect": "Allow",
+	            "Action": [
+	                "s3:GetObject",
+	                "s3:PutObject",
+	                "s3:ListBucket"
+	            ],
+	            "Resource": [
+	                f"arn:aws:s3:::{bucket_name}",
+	                f"arn:aws:s3:::{bucket_name}/*"
+	            ]
+	        }
+	    ]
+	}
+
+	with open(output, "w") as f:
+		json.dump(policy, f, indent=4)
+
+def generate_resource_policy(prefix, output, lambda_arn):
+	bucket_name = f"{prefix}-development"
+
+	policy = {
+	    "Version": "2012-10-17",
+	    "Statement": [
+	        {
+	            "Sid": "AllowLambdaAccess",
+	            "Effect": "Allow",
+	            "Principal": {
+	                "AWS": lambda_arn 
+	            },
+	            "Action": [
+	                "s3:GetObject",
+	                "s3:PutObject",
+	                "s3:DeleteObject",
+	                "s3:ListBucket"
+	            ],
+	            "Resource": [
+	                f"arn:aws:s3:::{bucket_name}",
+	                f"arn:aws:s3:::{bucket_name}/*"
+	            ]
+	        }
+	    ]
+	}
+
+	with open(output, "w") as f:
+		json.dump(policy, f, indent=4)
+
 def main():
 	prefix = "demo" + token_hex(4)
-	# create_buckets(prefix)
-	create_lambda_function(prefix)
+	create_buckets(prefix)
+	lambda_role_arn = create_lambda_function(prefix)
+	generate_iam_policy(prefix, "iam_policy.json")
+	generate_resource_policy(prefix, "resource_policy.json", lambda_role_arn)
 
 if __name__ == '__main__':
 	main()
