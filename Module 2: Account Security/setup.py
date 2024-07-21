@@ -2,12 +2,15 @@ import boto3
 from botocore.exceptions import ClientError
 from secrets import token_hex
 import subprocess
+import json
+import time
 
 region = 'ap-southeast-1'
+s3_client = boto3.client('s3')
+lambda_client = boto3.client('lambda')
+iam = boto3.client('iam')
 
 def create_buckets(prefix):
-	s3_client = boto3.client('s3')
-
 	bucketnames = [
 		f"{prefix}-development",
 		f"{prefix}-finance"
@@ -37,9 +40,79 @@ def create_buckets(prefix):
 
 	print("Successfully written files to S3!")
 
+def create_lambda_iam_role(prefix):
+	role_name = f"{prefix}-lambda-role"
+
+	trust_policy = {
+		"Version": "2012-10-17",
+		"Statement": [
+			{
+				"Effect": "Allow",
+				"Principal": {
+					"Service": "lambda.amazonaws.com"
+				},
+				"Action": "sts:AssumeRole"
+			}
+		]
+	}
+
+	try: 
+		response = iam.create_role(
+			RoleName = role_name,
+			AssumeRolePolicyDocument=json.dumps(trust_policy)
+		)
+
+		role_arn = response['Role']['Arn']
+		print(f"Created Lambda IAM Role with arn: {role_arn}")
+
+		iam.attach_role_policy(
+			RoleName = role_name,
+			PolicyArn='arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+		)
+
+		print(f"Attached basic execution role to {role_arn}")
+		
+		time.sleep(10)
+
+	except ClientError as e:
+		print("Error creating Lambda IAM role!")
+		print(e)
+		exit(0)
+
+	return role_arn
+
+def create_lambda_function(prefix):
+	function_name = f"{prefix}-listing"
+	code_file = "lambda.zip"
+
+	with open(code_file, "rb") as f:
+		zip_file = f.read()
+
+	role_arn = create_lambda_iam_role(prefix)
+	
+	try:
+		response = lambda_client.create_function(
+			FunctionName=function_name,
+			Runtime='python3.11',
+			Role=role_arn,
+			Code={'ZipFile': zip_file},
+			Handler='lambda_function.lambda_handler',
+			Timeout=30,  # Adjust timeout as needed
+			MemorySize=128,  # Adjust memory as needed
+			Publish=True  # Publish the function immediately
+		)
+
+		print("Created Lambda function!")
+
+	except ClientError as e:
+		print(f"Error creating lambda function")
+		print(e)
+		exit(0)
+
 def main():
 	prefix = "demo" + token_hex(4)
-	create_buckets(prefix)
+	# create_buckets(prefix)
+	create_lambda_function(prefix)
 
 if __name__ == '__main__':
 	main()
