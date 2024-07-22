@@ -129,6 +129,13 @@ def generate_iam_policy(prefix, output):
 	                f"arn:aws:s3:::{bucket_name}",
 	                f"arn:aws:s3:::{bucket_name}/*"
 	            ]
+	        }, {
+	        	"Sid": "ListBuckets",
+	        	"Effect": "Allow", 
+	        	"Action": [
+	        		"s3:ListALlMyBuckets"
+	        	],
+	        	"Resource": "*"
 	        }
 	    ]
 	}
@@ -146,16 +153,18 @@ def generate_resource_policy(prefix, output, lambda_arn):
 	            "Sid": "AllowLambdaAccess",
 	            "Effect": "Allow",
 	            "Principal": {
-	                "AWS": lambda_arn 
+	                "AWS": "lambda.amazonaws.com"
 	            },
-	            "Action": [
-	                "s3:GetObject",
-	                "s3:PutObject",
-	                "s3:DeleteObject",
-	                "s3:ListBucket"
-	            ],
+	            "Action": "s3:GetObject",
 	            "Resource": [
-	                f"arn:aws:s3:::{bucket_name}",
+	                f"arn:aws:s3:::{bucket_name}/*"
+	            ]
+	        }, {
+	        	"Sid": "DenyEveryoneElseGetObject",
+	        	"Effect": "Deny", 
+	        	"Principal": "*",
+	        	"Action": "s3.getObject",
+	        	"Resource": [
 	                f"arn:aws:s3:::{bucket_name}/*"
 	            ]
 	        }

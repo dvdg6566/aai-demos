@@ -20,6 +20,7 @@ def list_all_s3():
 	bucket_names = get_bucket_names()
 
 	for bucket_name in bucket_names:
+		if "demo" not in bucket_name: continue
 		print(f"Bucket found: {bucket_name}")
 	
 		try:
@@ -27,7 +28,7 @@ def list_all_s3():
 			for obj in response['Contents']:
 				print(obj['Key'])
 		except ClientError as e:
-			print(f"Error lsiting objects in bucket {bucket_name}!")
+			print(f"Error listing objects in bucket {bucket_name}!")
 			print(e)
 
 		print()

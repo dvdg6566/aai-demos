@@ -28,6 +28,7 @@ def get_bucket_names():
 	try:
 		resp = s3_client.list_buckets()
 		buckets = [b['Name'] for b in resp['Buckets']]
+		buckets = [b for b in buckets if 'demo' in b]
 	except ClientError as e:
 		print("Error listing buckets")
 		print(e)
@@ -42,14 +43,22 @@ def delete_demo_iam_entities():
 	try:
 		users = iam.list_users()['Users']
 		for user in users:
-			if user['UserName'].startswith(prefix):
-				print(f"Deleting user:{user['UserName']}")
-				# Additional safety check: Check if user has active access keys
-				keys = iam.list_access_keys(UserName=user['UserName'])['AccessKeyMetadata']
-				for key in keys:
-					iam.delete_access_key(UserName=user['UserName'], AccessKeyId=key['AccessKeyId'])
-				iam.delete_user(UserName=user['UserName'])
-				print(f"Deleted user: {user['UserName']}")
+			if not user['UserName'].startswith(prefix): continue
+			try: 
+				iam.delete_login_profile(UserName=user['UserName'])
+			except Exception as e:
+				print(e)
+
+			for policy in iam.list_attached_user_policies(UserName=user['UserName'])['AttachedPolicies']:
+				iam.detach_user_policy(UserName=user['UserName'], PolicyArn=policy['PolicyArn'])
+
+			print(f"Deleting user:{user['UserName']}")
+			# Additional safety check: Check if user has active access keys
+			keys = iam.list_access_keys(UserName=user['UserName'])['AccessKeyMetadata']
+			for key in keys:
+				iam.delete_access_key(UserName=user['UserName'], AccessKeyId=key['AccessKeyId'])
+			iam.delete_user(UserName=user['UserName'])
+			print(f"Deleted user: {user['UserName']}")
 	except ClientError as e:
 		print(f"Error listing or deleting users: {user['UserName']}")
 		print(e)
@@ -75,20 +84,26 @@ def delete_demo_iam_entities():
 	try:
 		policies = iam.list_policies(Scope='Local')['Policies'] 
 		for policy in policies:
-			if policy['PolicyName'].startswith(prefix):
-				print(f"Deleting policy: {policy}" )
-				# Ensure policy is not the default version before deleting
-				if not policy['IsDefaultVersion']:
-					iam.delete_policy(PolicyArn=policy['Arn'])
+			if not policy['PolicyName'].startswith(prefix): continue
+			policy_arn = policy['Arn']
+
+			print(f"Deleting policy: {policy_arn}" )
+			versions = iam.list_policy_versions(PolicyArn=policy_arn)['Versions']
+			for version in versions:
+				if not version['IsDefaultVersion']:
+					iam.delete_policy_version(PolicyArn=policy_arn, VersionId=version['VersionId'])
+
+			iam.delete_policy(PolicyArn=policy['Arn'])
+			print(f"Deleted policy: {policy['Arn']}")
 	except ClientError as e:
 		print(f"Error listing or deleting policy: {policy['Arn']}")
 		print(e)
 		exit(0)
 
 def main():
-	# bucket_names = get_bucket_names()
-	# for bucket in bucket_names:
-	# 	clear_bucket(bucket)
+	bucket_names = get_bucket_names()
+	for bucket in bucket_names:
+		clear_bucket(bucket)
 	delete_demo_iam_entities() 
 
 if __name__ == '__main__':

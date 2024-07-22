@@ -10,9 +10,17 @@
                 "s3:ListBucket"
             ],
             "Resource": [
-                "arn:aws:s3:::democ7050589-development",
-                "arn:aws:s3:::democ7050589-development/*"
+                "arn:aws:s3:::demo428d374a-development",
+                "arn:aws:s3:::demo428d374a-development/*"
             ]
+        },
+        {
+            "Sid": "ListBuckets",
+            "Effect": "Allow",
+            "Action": [
+                "s3:ListALlMyBuckets"
+            ],
+            "Resource": "*"
         }
     ]
 }

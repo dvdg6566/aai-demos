@@ -5,7 +5,7 @@
             "Sid": "AllowLambdaAccess",
             "Effect": "Allow",
             "Principal": {
-                "AWS": "arn:aws:iam::927878278795:role/democ7050589-lambda-role"
+                "AWS": "arn:aws:iam::533267019286:role/demo428d374a-lambda-role"
             },
             "Action": [
                 "s3:GetObject",
@@ -14,8 +14,8 @@
                 "s3:ListBucket"
             ],
             "Resource": [
-                "arn:aws:s3:::democ7050589-development",
-                "arn:aws:s3:::democ7050589-development/*"
+                "arn:aws:s3:::demo428d374a-development",
+                "arn:aws:s3:::demo428d374a-development/*"
             ]
         }
     ]
