@@ -46,7 +46,7 @@ def terminate_instances(instance_ids):
         print("The following instances have been terminated:")
         for instance_id in instance_ids:
             print(instance_id)
-        time.sleep(15)
+        time.sleep(20)
     else:
         print("No running instances found to terminate.")
 
