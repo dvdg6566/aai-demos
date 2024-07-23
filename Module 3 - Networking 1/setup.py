@@ -25,8 +25,8 @@ def setup_vpc(prefix):
 	public_route_table = vpc.create_route_table()
 	public_route_table.create_tags(Tags=[{'Key': 'Name', 'Value': f'{prefix}-Public-Route-Table'}])
 	public_route_table.create_route(
-	    DestinationCidrBlock='0.0.0.0/0',
-	    GatewayId=internet_gateway.id
+		DestinationCidrBlock='0.0.0.0/0',
+		GatewayId=internet_gateway.id
 	)
 
 	subnet_1 = ec2.create_subnet(CidrBlock=subnet_1_cidr, VpcId=vpc.id, AvailabilityZone=AZ)  
@@ -37,22 +37,22 @@ def setup_vpc(prefix):
 	ami_id = 'ami-0e97ea97a2f374e3d'
 	instance_type = 't2.micro'
 	security_group = ec2.create_security_group(
-	    GroupName=f'{prefix}-securitygroup',
-	    Description='demo security group',
-	    VpcId=vpc.id
+		GroupName=f'{prefix}-securitygroup',
+		Description='demo security group',
+		VpcId=vpc.id
 	)
 
 	instances = ec2.create_instances(
-	    ImageId=ami_id,
-	    InstanceType=instance_type,
-	    MinCount=1,
-	    MaxCount=1,
-	    NetworkInterfaces=[{
-	        'SubnetId': subnet_1.id, 
-	        'DeviceIndex': 0,
-	        'AssociatePublicIpAddress': True  # Automatically assign public IP
-	    }],
-	    SecurityGroupIds=[security_group.id]
+		ImageId=ami_id,
+		InstanceType=instance_type,
+		MinCount=1,
+		MaxCount=1,
+		NetworkInterfaces=[{
+			'SubnetId': subnet_1.id, 
+			'DeviceIndex': 0,
+			'AssociatePublicIpAddress': True  # Automatically assign public IP
+		}],
+		SecurityGroupIds=[security_group.id]
 	)
 
 	instance = instances[0]
@@ -60,9 +60,57 @@ def setup_vpc(prefix):
 
 	print(f"EC2 instance launched with id {instance.id} and public IP {instance.public_ip_address}")
 
+def setup_instance(prefix):
+	instance_name = f"{prefix}-webserver"
+
+	ami_id = 'ami-0e97ea97a2f374e3d'
+	instance_type = 't2.micro'
+	security_group = ec2.create_security_group(
+		GroupName=f'{prefix}-webserver-securitygroup',
+		Description='demo webserver security group'
+	)
+
+	user_data = """#!/bin/bash
+yum update -y
+yum install -y httpd
+systemctl start httpd
+systemctl enable httpd
+
+echo "<h1>Hello, World!</h1>" > /var/www/html/index.html"
+"""
+
+	instances = ec2.create_instances(
+		ImageId=ami_id,
+		InstanceType=instance_type,
+		MinCount=1,
+		MaxCount=1,
+		SecurityGroupIds=[security_group.id],
+		UserData=user_data,
+		TagSpecifications=[
+			{
+				'ResourceType': 'instance',
+				'Tags': [{
+					'Key': 'Name',
+					'Value': instance_name
+				}]
+			}
+		]
+	)
+
+	print("Launching Web-server EC2 instance")
+
+	instance = instances[0]
+	instance.wait_until_running()
+	instance.reload()
+
+	print(f"Launched EC2 instance {instance_name}")
+	if instance[0].public_ip_address:
+		print(f"Instance Public IP Address: {instance[0].public_ip_address}")
+
 def main():
 	prefix = "demo" + token_hex(4)
-	setup_vpc(prefix)
+	# setup_vpc(prefix)
+	setup_instance(prefix)
 
 if __name__ == '__main__':
 	main()

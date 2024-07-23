@@ -28,7 +28,7 @@ def list_instances():
             instance_obj = ec2_resource.Instance(instance_id)
             instance_name = ""
 
-            for tag in instance['Tags']:
+            for tag in instance.get('Tags', []):
                 if tag['Key'] == 'Name':  # Adjust if you use a different tag key
                     instance_name = tag['Value']
 
