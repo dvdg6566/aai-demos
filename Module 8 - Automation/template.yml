@@ -68,7 +68,7 @@ Resources:
       - WebServerIamProfile
     Properties:
       InstanceType: t2.nano
-      ImageId: ami-0b7e55206a0a22afc # Ubuntu 22.04 x64
+      ImageId: ami-0e97ea97a2f374e3d
       IamInstanceProfile: 
         Ref: WebServerIamProfile
       Tags: 
