@@ -1,0 +1,21 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  AppName:
+    Description: "Insert name of Application"
+    Type: "String"
+    Default: "demo-070824"
+
+Resources:
+  DocumentsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: 
+        Fn::Sub: ${AppName}-documents
+      AccessControl: Private
+      LifecycleConfiguration:
+        Rules:
+          - Id: clear-old-documents
+            Prefix: archive/
+            Status: Enabled
+            ExpirationInDays: 1

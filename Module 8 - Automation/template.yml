@@ -1,0 +1,100 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  AppName:
+    Description: "Insert name of Application"
+    Type: "String"
+    Default: "demo-070824"
+
+Resources:
+  DocumentsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: 
+        Fn::Sub: ${AppName}-documents
+      AccessControl: Private
+      LifecycleConfiguration:
+        Rules:
+          - Id: clear-old-documents
+            Prefix: archive/
+            Status: Enabled
+            ExpirationInDays: 1
+  WebServerIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName:
+        Fn::Sub: ${AppName}-ec2main
+      AssumeRolePolicyDocument: # Specifies that role is for EC2 instances only
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+
+  WebServerIamProfile:
+    Type: AWS::IAM::InstanceProfile
+    DependsOn: WebServerIamRole
+    Properties:
+      InstanceProfileName: 
+        Fn::Sub: ${AppName}-ec2profile
+      Roles:
+        - Ref: WebServerIamRole
+
+  WebServerSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupName: 
+        Fn::Sub:
+          ${AppName}-ec2SG 
+      GroupDescription: Allows SSH and HTTP
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          FromPort: 22
+          IpProtocol: 'tcp'
+          ToPort: 22
+        - CidrIp: 0.0.0.0/0
+          FromPort: 80
+          IpProtocol: 'tcp'
+          ToPort: 80
+
+  WebServer:
+    Type: AWS::EC2::Instance
+    DependsOn: 
+      - WebServerIamProfile
+    Properties:
+      InstanceType: t2.nano
+      ImageId: ami-0b7e55206a0a22afc # Ubuntu 22.04 x64
+      IamInstanceProfile: 
+        Ref: WebServerIamProfile
+      Tags: 
+        - Key: Name
+          Value: 
+            Fn::Sub: ${AppName}-webserver
+      SecurityGroupIds:
+        - !Ref WebServerSecurityGroup
+      UserData:
+        Fn::Base64: 
+          !Sub |
+            #!/bin/bash
+            yum update -y
+            yum install -y httpd
+            systemctl start httpd
+            systemctl enable httpd
+
+            echo "<h1>Hello, World!</h1>" > /var/www/html/index.html"
+
+  WebServerEIP:
+    Type: AWS::EC2::EIP
+    DependsOn: WebServer
+    Properties:
+      InstanceId: !Ref WebServer
+
+Outputs:
+  WebServerIP:
+    Description: Main web server IP address
+    Value: !Ref WebServerEIP
