@@ -150,21 +150,14 @@ def generate_resource_policy(prefix, output, lambda_arn):
 	    "Version": "2012-10-17",
 	    "Statement": [
 	        {
-	            "Sid": "AllowLambdaAccess",
-	            "Effect": "Allow",
+	            "Sid": "DenyIAMUserAccess",
+	            "Effect": "Deny",
 	            "Principal": {
-	                "AWS": "lambda.amazonaws.com"
+	                "AWS": "<insert IAM User ARN>"
 	            },
-	            "Action": "s3:GetObject",
+	            "Action": "s3:ListBucket",
 	            "Resource": [
-	                f"arn:aws:s3:::{bucket_name}/*"
-	            ]
-	        }, {
-	        	"Sid": "DenyEveryoneElseGetObject",
-	        	"Effect": "Deny", 
-	        	"Principal": "*",
-	        	"Action": "s3.getObject",
-	        	"Resource": [
+	            	f"arn:aws:s3:::{bucket_name}",
 	                f"arn:aws:s3:::{bucket_name}/*"
 	            ]
 	        }

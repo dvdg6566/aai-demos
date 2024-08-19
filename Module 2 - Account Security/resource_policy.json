@@ -2,20 +2,14 @@
     "Version": "2012-10-17",
     "Statement": [
         {
-            "Sid": "AllowLambdaAccess",
-            "Effect": "Allow",
+            "Sid": "DenyIAMUserAccess",
+            "Effect": "Deny",
             "Principal": {
-                "AWS": "arn:aws:iam::533267019286:role/demo428d374a-lambda-role"
+                "AWS": "<insert IAM User ARN>"
             },
-            "Action": [
-                "s3:GetObject",
-                "s3:PutObject",
-                "s3:DeleteObject",
-                "s3:ListBucket"
-            ],
+            "Action": "s3:ListBucket",
             "Resource": [
-                "arn:aws:s3:::demo428d374a-development",
-                "arn:aws:s3:::demo428d374a-development/*"
+                "arn:aws:s3:::democ90896ba-finance/*"
             ]
         }
     ]
