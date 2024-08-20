@@ -101,6 +101,17 @@ def attach_sg_rule(security_group_id):
         ]
     )
 
+def attach_denyOutbound_sg_rule(security_group_id):
+	ec2_client.revoke_security_group_egress(
+        GroupId=security_group_id,
+        IpPermissions=[
+            {
+                'IpProtocol': '-1',
+                'IpRanges': [{'CidrIp': '0.0.0.0/0'}]
+            },
+        ]
+    )
+
 def setup_vpc(prefix):
 	vpc_cidr_block = '10.0.0.0/16' 
 	subnet_1_cidr = '10.0.1.0/24' 
@@ -126,6 +137,7 @@ def setup_vpc(prefix):
 		VpcId=vpc.id
 	)
 	attach_sg_rule(security_group.id)
+	attach_denyOutbound_sg_rule(security_group.id)
 
 	launch_ec2_instance(f"{prefix}-demo1", subnet_1.id, security_group.id)
 	launch_ec2_instance(f"{prefix}-demo2", subnet_2.id, security_group.id)

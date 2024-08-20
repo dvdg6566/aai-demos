@@ -107,12 +107,32 @@ def delete_vpc(vpc_id):
     vpc.delete()
     print(f"VPC ID: {vpc_id} deleted")
 
+def delete_nacls(vpc_id):
+    print(f"Deleting NACLs for VPC {vpc_id}")
+
+    response = ec2.describe_network_acls(
+        Filters=[
+            {
+                'Name': 'vpc-id',
+                'Values': [vpc_id]
+            }
+        ]
+    )
+    
+    for nacl in response['NetworkAcls']:
+        try:
+            ec2.delete_network_acl(NetworkAclId=nacl['NetworkAclId'])
+            print(f"Deleted Network ACL: {nacl['NetworkAclId']}")
+        except Exception as e:
+            print(f"Error deleting Network ACL {nacl['NetworkAclId']}: {e}")
+
 def main():
     vpcs = list_vpcs()
     ec2_instances = list_instances()
     terminate_instances(ec2_instances)
 
     for vpc in vpcs:
+        delete_nacls(vpc)
         delete_subnets(vpc)
     for vpc in vpcs:
         delete_vpc(vpc)
