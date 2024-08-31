@@ -4,6 +4,7 @@ from botocore.exceptions import ClientError
 s3 = boto3.resource('s3')
 s3_client = boto3.client('s3')
 iam = boto3.client('iam')
+lambda_client = boto3.client('lambda')
 
 def clear_bucket(bucket_name):
 	print(f"Deleting bucket {bucket_name}")
@@ -123,11 +124,22 @@ def delete_demo_iam_entities():
 		print(e)
 		exit(0)
 
+def delete_lambda_functions():
+    # Get all Lambda functions
+    functions = lambda_client.list_functions()['Functions']
+
+    # Filter and delete demo functions
+    for function in functions:
+        if function['FunctionName'].startswith('demo'):
+            lambda_client.delete_function(FunctionName=function['FunctionName'])
+            print(f"Deleted Lambda function: {function['FunctionName']}")
+
 def main():
 	bucket_names = get_bucket_names()
 	for bucket in bucket_names:
 		clear_bucket(bucket)
 	delete_demo_iam_entities() 
+	delete_lambda_functions()
 
 if __name__ == '__main__':
 	main()
