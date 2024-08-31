@@ -2,7 +2,8 @@ import boto3
 import time
 
 ec2 = boto3.client('ec2')
-ec2_resource = boto3.resource('ec2')   
+ec2_resource = boto3.resource('ec2')
+lambda_client = boto3.client('lambda')  
 
 def list_vpcs():
     response = ec2.describe_vpcs()
@@ -107,7 +108,18 @@ def delete_vpc(vpc_id):
     vpc.delete()
     print(f"VPC ID: {vpc_id} deleted")
 
+def delete_lambda_functions():
+    # Get all Lambda functions
+    functions = lambda_client.list_functions()['Functions']
+
+    # Filter and delete demo functions
+    for function in functions:
+        if function['FunctionName'].startswith('demo'):
+            lambda_client.delete_function(FunctionName=function['FunctionName'])
+            print(f"Deleted Lambda function: {function['FunctionName']}")
+
 def main():
+    delete_lambda_functions()
     vpcs = list_vpcs()
 
     for vpc in vpcs:

@@ -108,6 +108,11 @@ def create_lambda_iam_role(prefix):
 			PolicyArn='arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
 		)
 
+		iam.attach_role_policy(
+			RoleName = role_name,
+			PolicyArn='arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole'
+		)
+		
 		print(f"Attached basic execution role to {role_arn}")
 		
 		time.sleep(10)
@@ -135,7 +140,7 @@ def create_lambda_function(prefix, subnet_ids, sg_ids):
 			Role=role_arn,
 			Code={'ZipFile': zip_file},
 			Handler='lambda_function.lambda_handler',
-			Timeout=30,  # Adjust timeout as needed
+			Timeout=5,  # Adjust timeout as needed
 			MemorySize=128,  # Adjust memory as needed
 			Publish=True,  # Publish the function immediately
 			VpcConfig={
