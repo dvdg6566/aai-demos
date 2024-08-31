@@ -108,18 +108,65 @@ def delete_vpc(vpc_id):
     vpc.delete()
     print(f"VPC ID: {vpc_id} deleted")
 
+
+def detach_lambda_from_eni(function_name):
+    lambda_client = boto3.client('lambda')
+
+    try:
+        # Get the function's configuration to retrieve the ENI ID
+        response = lambda_client.get_function_configuration(FunctionName=function_name)
+        vpc_config = response.get('VpcConfig', {})
+        eni_id = vpc_config.get('VpcId')  # Assuming the ENI ID is stored in the VpcId field
+
+        if eni_id:
+            # Delete the function's VPC configuration to detach it from the ENI
+            lambda_client.update_function_configuration(
+                FunctionName=function_name,
+                VpcConfig={}  # Empty VpcConfig to remove the association
+            )
+            print(f"Lambda function '{function_name}' detached from ENI '{eni_id}'")
+        else:
+            print(f"Lambda function '{function_name}' is not attached to an ENI")
+
+    except Exception as e:
+        print(f"Error detaching Lambda function from ENI: {e}")
+
+# Example usage
+detach_lambda_from_eni('my-lambda-function')
+
 def delete_lambda_functions():
     # Get all Lambda functions
     functions = lambda_client.list_functions()['Functions']
 
     # Filter and delete demo functions
     for function in functions:
-        if function['FunctionName'].startswith('demo'):
+        functionName = function['FunctionName']
+
+        if functionName.startswith('demo'):
+            detach_lambda_from_eni(functionName)
+
             lambda_client.delete_function(FunctionName=function['FunctionName'])
             print(f"Deleted Lambda function: {function['FunctionName']}")
 
+def delete_all_vpc_endpoints():
+    ec2_client = boto3.client('ec2')
+
+    try:
+        response = ec2_client.describe_vpc_endpoints()
+        vpc_endpoints = response['VpcEndpoints']
+
+        for endpoint in vpc_endpoints:
+            endpoint_id = endpoint['VpcEndpointId']
+            ec2_client.delete_vpc_endpoints(VpcEndpointIds=[endpoint_id])
+            print(f"Deleted VPC endpoint: {endpoint_id}")
+
+    except Exception as e:
+        print(f"Error deleting VPC endpoints:")
+        print(e)
+
 def main():
     delete_lambda_functions()
+    delete_all_vpc_endpoints()
     vpcs = list_vpcs()
 
     for vpc in vpcs:

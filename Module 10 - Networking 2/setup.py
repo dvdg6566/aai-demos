@@ -112,6 +112,11 @@ def create_lambda_iam_role(prefix):
 			RoleName = role_name,
 			PolicyArn='arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole'
 		)
+
+		iam.attach_role_policy(
+			RoleName = role_name,
+			PolicyArn='arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess'
+		)
 		
 		print(f"Attached basic execution role to {role_arn}")
 		
