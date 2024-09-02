@@ -9,7 +9,8 @@
             },
             "Action": "s3:ListBucket",
             "Resource": [
-                "arn:aws:s3:::democ90896ba-finance/*"
+                "arn:aws:s3:::demof3baa9d7-development",
+                "arn:aws:s3:::demof3baa9d7-development/*"
             ]
         }
     ]
