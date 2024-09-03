@@ -62,3 +62,6 @@ def main():
 	bucket_names = get_bucket_names()
 	for bucket in bucket_names:
 		clear_bucket(bucket)
+
+if __name__ == '__main__':
+	main()

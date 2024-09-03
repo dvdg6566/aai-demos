@@ -1,8 +1,10 @@
 import boto3
 from botocore.exceptions import ClientError
+import time
 
 s3 = boto3.resource('s3')
 s3_client = boto3.client('s3')
+cloudfront = boto3.client('cloudfront')
 
 def clear_bucket(bucket_name):
 	print(f"Deleting bucket {bucket_name}")
@@ -58,7 +60,52 @@ def get_bucket_names():
 
 	return buckets
 
+def delete_cloudfront_distributions():
+	distributions = cloudfront.list_distributions()
+
+	for distribution in distributions['DistributionList']['Items']:
+		distribution_id = distribution['Id']
+		distribution_config = cloudfront.get_distribution_config(Id=distribution_id)
+		etag = distribution_config['ETag']
+
+		updated_config = {
+			**distribution_config['DistributionConfig'],  # Include all existing parameters
+			'Enabled': False     # Disable the distribution
+		}
+
+		# Disable the distribution first
+		print(f"Disabling distribution: {distribution_id}")
+		
+		cloudfront.update_distribution(
+			Id=distribution_id,
+			IfMatch=etag,
+			DistributionConfig=updated_config
+		)
+
+		# Wait for the distribution to be disabled
+		while True:
+			status = cloudfront.get_distribution(Id=distribution_id)['Distribution']['Status']
+			if status == "Deployed":
+				print(f"Distribution disabled: {distribution_id}")
+				break
+			else:
+				print("Waiting for distribution to be disabled...")
+				time.sleep(10) 
+
+		# Delete the distribution
+		print(f"Deleting distribution: {distribution_id}")
+		cloudfront.delete_distribution(
+			Id=distribution_id,
+			IfMatch=etag
+		)
+
+	print("All CloudFront distributions have been deleted.")
+
 def main():
 	bucket_names = get_bucket_names()
 	for bucket in bucket_names:
 		clear_bucket(bucket)
+	delete_cloudfront_distributions()
+
+if __name__ == '__main__':
+	main()
